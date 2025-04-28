@@ -55,6 +55,10 @@ const HallLayout: React.FC = () => {
     setShowPrintPreview,
     setSkipRemovedSeatsVisual,
     setAutoRenumberSeats,
+    setSectionAlignments,
+    setShowSectionNameModal,
+    setShowRowSeatsModal,
+    setSectionToEdit,
     
     // Operations
     resetLayout,
@@ -201,7 +205,11 @@ const HallLayout: React.FC = () => {
                 </button>
               ))}
           </div>
-          <LayoutConfigDrawer isOpen={drawerOpen} onClose={() => setDrawerOpen(false)}>      
+          <LayoutConfigDrawer 
+            isOpen={drawerOpen} 
+            onClose={() => setDrawerOpen(false)}
+            selectedSection={selectedSection}
+          >      
           {!showSectionConfig && selectedSection && (
             <>
               <div className="flex flex-col items-start gap-4 mb-4">
@@ -480,7 +488,7 @@ const HallLayout: React.FC = () => {
           rowLabel={selectedRow.rowLabel}
           initialSeats={rowSeatsPerRow[selectedRow.section]?.[selectedRow.rowIndex] || 
             sections[selectedRow.section]?.seatsPerRow || 0}
-          onSave={handleUpdateRowSeats}
+          onSave={(seats) => handleUpdateRowSeats(selectedRow.rowIndex, seats)}
         />
       )}
       
@@ -489,6 +497,9 @@ const HallLayout: React.FC = () => {
           isOpen={showPrintPreview}
           onClose={() => setShowPrintPreview(false)}
           hallName={hallName}
+          hallAddress={hallAddress}
+          hallCity={hallCity}
+          totalSeats={totalSeats}
           sections={sections}
           sectionNumberingStyles={sectionNumberingStyles}
           rowLabels={rowLabels}

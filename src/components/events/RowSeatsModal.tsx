@@ -4,34 +4,30 @@ import { X, Plus, Minus } from 'lucide-react';
 interface RowSeatsModalProps {
   isOpen: boolean;
   onClose: () => void;
-  sectionName: string;
-  rowIndex: number;
   rowLabel: string;
-  currentSeats: number;
-  onConfirm: (rowIndex: number, seats: number) => void;
+  initialSeats: number;
+  onSave: (seats: number) => void;
 }
 
 const RowSeatsModal: React.FC<RowSeatsModalProps> = ({
   isOpen,
   onClose,
-  sectionName,
-  rowIndex,
   rowLabel,
-  currentSeats,
-  onConfirm
+  initialSeats,
+  onSave
 }) => {
-  const [seats, setSeats] = useState(currentSeats);
+  const [seats, setSeats] = useState(initialSeats);
 
   // Reset seats when modal opens with new data
   useEffect(() => {
-    setSeats(currentSeats);
-  }, [currentSeats, isOpen]);
+    setSeats(initialSeats);
+  }, [initialSeats, isOpen]);
 
   if (!isOpen) return null;
 
   const handleSubmit = (e: React.FormEvent) => {
     e.preventDefault();
-    onConfirm(rowIndex, seats);
+    onSave(seats);
     onClose();
   };
 
@@ -50,9 +46,6 @@ const RowSeatsModal: React.FC<RowSeatsModalProps> = ({
               <X className="w-5 h-5 text-white" />
             </button>
           </div>
-          <p className="text-sm text-white/80 mt-1">
-            Sekcja: {sectionName}
-          </p>
         </div>
 
         <form onSubmit={handleSubmit} className="p-6 space-y-4">

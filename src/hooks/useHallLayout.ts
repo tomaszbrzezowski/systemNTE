@@ -546,7 +546,11 @@ export const useHallLayout = ({ hallId }: HallProps) => {
     setShowSectionConfig,
     setShowPrintPreview,
     setSkipRemovedSeatsVisual,
-    setAutoRenumberSeats, 
+    setAutoRenumberSeats,
+    setSectionAlignments,
+    setShowSectionNameModal,
+    setShowRowSeatsModal,
+    setSectionToEdit,
     
     // Operations
     resetLayout,

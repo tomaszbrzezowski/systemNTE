@@ -4,31 +4,31 @@ import { X } from 'lucide-react';
 interface SectionNameEditModalProps {
   isOpen: boolean;
   onClose: () => void;
-  onSave: (name: string) => void;
-  currentName: string;
-  sectionKey: string;
+  onSave: (section: string, name: string) => void;
+  section: string;
+  initialName: string;
 }
 
 const SectionNameEditModal: React.FC<SectionNameEditModalProps> = ({
   isOpen,
   onClose,
   onSave,
-  currentName,
-  sectionKey
+  section,
+  initialName
 }) => {
-  const [name, setName] = useState(currentName);
+  const [name, setName] = useState(initialName);
 
   // Reset name when modal opens with new section
   useEffect(() => {
-    setName(currentName);
-  }, [currentName, isOpen]);
+    setName(initialName);
+  }, [initialName, isOpen]);
 
   if (!isOpen) return null;
 
   const handleSubmit = (e: React.FormEvent) => {
     e.preventDefault();
     if (name.trim()) {
-      onSave(name);
+      onSave(section, name);
       onClose();
     }
   };

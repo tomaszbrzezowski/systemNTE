@@ -12,11 +12,8 @@ interface HallLayoutGridProps {
   sections: Record<string, SectionConfig>;
   sectionNumberingStyles: Record<string, 'arabic' | 'roman' | 'letters'>;
   numberingDirections?: Record<string, 'ltr' | 'rtl'>;
-  selectedSection: 'main' | 'left' | 'right' | 'back' | 'back1' | 'back2' | 'left1' | 'left2' | 'right1' | 'right2' | null;
-  onSelectSection: (section: 'main' | 'left' | 'right' | 'back' | 'back1' | 'back2' | 'left1' | 'left2' | 'right1' | 'right2') => void;
   rowLabels?: Record<string, Record<number, string>>;
   sectionNames: Record<string, string>;
-  onSectionNameChange: (section: string, name: string) => void;
   onRemoveSeat?: (section: string, rowIndex: number, seatIndex: number) => void;
   rowSeatsPerRow?: Record<string, Record<number, number>>;
   removedSeats?: Record<string, Record<number, Set<number>>>;
@@ -24,23 +21,16 @@ interface HallLayoutGridProps {
   onAddEmptyRow?: (section: string, afterRowIndex: number) => void;
   sectionAlignments?: Record<string, 'left' | 'center' | 'right'>;
   rowAlignments?: Record<string, Record<number, 'left' | 'center' | 'right'>>;
-  autoRenumberSeats?: boolean;
-  isPreviewMode?: boolean;
-  seatAssignments?: Record<string, string>;
-  schools?: Array<{ name: string; color: string }>;
-  showLegend?: boolean;
-  onSeatClick?: (section: string, rowIndex: number, seatIndex: number) => void;
+  skipRemovedSeatsVisual?: boolean;
+  onSelectRow?: (section: string, rowIndex: number) => void;
 }
 
 const HallLayoutGrid: React.FC<HallLayoutGridProps> = ({
   sections = {},
   sectionNumberingStyles = {},
   numberingDirections = {},
-  selectedSection,
-  onSelectSection,
   rowLabels = {},
   sectionNames,
-  onSectionNameChange,
   onRemoveSeat,
   rowSeatsPerRow = {},
   removedSeats = {},
@@ -48,26 +38,13 @@ const HallLayoutGrid: React.FC<HallLayoutGridProps> = ({
   onAddEmptyRow,
   sectionAlignments = {},
   rowAlignments = {},
-  autoRenumberSeats = false,
-  isPreviewMode = false,
-  seatAssignments = {},
-  schools = [],
-  showLegend = false,
-  onSeatClick
+  skipRemovedSeatsVisual = false,
+  onSelectRow
 }) => {
   const [hoveredRow, setHoveredRow] = useState<{section: string, rowIndex: number} | null>(null);
-  const [internalAutoRenumberSeats, setInternalAutoRenumberSeats] = useState<boolean>(autoRenumberSeats);
   
-  // Use the prop value if provided, otherwise use internal state
-  const effectiveAutoRenumberSeats = autoRenumberSeats !== undefined ? autoRenumberSeats : internalAutoRenumberSeats;
-  
-  // Function to toggle auto-renumbering of seats
-  const toggleAutoRenumberSeats = () => {
-    setInternalAutoRenumberSeats(prev => !prev);
-  };
-
   // Get row label based on numbering style
-  const getRowLabel = (rowIndex: number, section: 'main' | 'left' | 'right' | 'back' | 'back1' | 'back2'): string => {
+  const getRowLabel = (rowIndex: number, section: string): string => {
     // Check if the section exists in sections prop
     if (!sections[section]) {
       return '';
@@ -111,8 +88,8 @@ const HallLayoutGrid: React.FC<HallLayoutGridProps> = ({
 
     const directionToUse = direction || numberingDirections?.[section] || 'ltr';
 
-    // If auto-renumbering is disabled, just return the seat index + 1
-    if (!effectiveAutoRenumberSeats) {
+    // If skip removed seats visual is enabled, we need to account for removed seats in the numbering
+    if (!skipRemovedSeatsVisual) {
       if (directionToUse === 'rtl') {
         const total = sections[section].seatsPerRow;
         return total - seatIndex;
@@ -175,27 +152,19 @@ const HallLayoutGrid: React.FC<HallLayoutGridProps> = ({
   };
 
   // Render vertical section (for left and right sides)
-  const renderVerticalSection = (side: 'left' | 'right') => {
+  const renderVerticalSection = (side: string) => {
     // Skip if section is not enabled or doesn't exist
     if (!sections[side]?.enabled) return null;
     
     const sideRows = sections[side].rows;
     const sideSeats = sections[side].seatsPerRow;
-    const isSelected = selectedSection === side;
     
     return (
       <div 
         className="flex flex-col items-center mb-8"
       >
         <h3 
-          className={`text-sm font-medium mb-3 cursor-pointer ${isSelected ? 'text-red-600 font-bold' : 'text-gray-700'}`}
-          onClick={() => {
-            if (selectedSection === side) {
-              onSelectSection(null as any);
-            } else {
-              onSelectSection(side);
-            }
-          }}
+          className={`text-sm font-medium mb-3 cursor-pointer`}
         >
           {sectionNames[side]}
         </h3>
@@ -236,7 +205,7 @@ const HallLayoutGrid: React.FC<HallLayoutGridProps> = ({
                     if (isRemoved) {
                       return (
                         <div key={seatIndex} className="w-6 h-6 relative group">
-                          {selectedSection === side && onRemoveSeat && (
+                          {onRemoveSeat && (
                             <button
                               onClick={(e) => {
                                 e.stopPropagation();
@@ -255,33 +224,19 @@ const HallLayoutGrid: React.FC<HallLayoutGridProps> = ({
                     // Calculate seat number based on whether auto-renumbering is enabled
                     const seatNumber = getSeatNumber(side, rowIndex, seatIndex, numberingDirections[side]);
                     
-                    // Get seat assignment if any
-                    const seatId = `${side}-${rowIndex}-${seatIndex}`;
-                    const assignedSchool = seatAssignments[seatId];
-                    const schoolColor = schools.find(s => s.name === assignedSchool)?.color;
-                    
-                    // Otherwise render the seat
                     return (
                       <div 
                         key={`seat-${seatIndex}`}
-                        className={`relative w-6 h-6 rounded flex items-center justify-center group hover:bg-blue-200 transition-colors ${
-                          assignedSchool ? 'bg-blue-500 text-white' : 'bg-gray-50 border border-gray-500'
-                        } ${isPreviewMode ? 'cursor-pointer' : ''}`}
-                        onClick={() => {
-                          if (isPreviewMode && onSeatClick) {
-                            onSeatClick(side, rowIndex, seatIndex);
-                          }
-                        }}
-                        style={schoolColor ? { backgroundColor: schoolColor } : undefined}
+                        className={`relative w-6 h-6 rounded flex items-center justify-center group hover:bg-blue-200 transition-colors`}
                       >
-                        <span className={`text-[12px] ${assignedSchool ? 'text-white' : 'text-gray-700'}`}>
+                        <span className={`text-[12px] text-gray-700`}>
                           {seatNumber}
                         </span>
-                        {selectedSection === side && onRemoveSeat && !isPreviewMode && (
+                        {onRemoveSeat && (
                           <button
                             onClick={(e) => {
                               e.stopPropagation();
-                              onRemoveSeat(side, rowIndex, seatIndex); 
+                              onRemoveSeat(side, rowIndex, seatIndex);
                             }}
                             className="absolute -top-1 -right-1 w-4 h-4 bg-red-500 rounded-full flex items-center justify-center opacity-0 group-hover:opacity-100 transition-opacity z-10"
                           >
@@ -308,21 +263,13 @@ const HallLayoutGrid: React.FC<HallLayoutGridProps> = ({
     
     const backRows = sections[section].rows;
     const backSeatsPerRow = sections[section].seatsPerRow;
-    const isSelected = selectedSection === section;
     
     return (
       <div 
         className="w-full max-w-4xl mx-auto mb-8"
       >
         <h3 
-          className={`text-sm font-medium mb-3 text-center cursor-pointer ${isSelected ? 'text-red-600 font-bold' : 'text-gray-700'}`}
-          onClick={() => {
-            if (selectedSection === section) {
-              onSelectSection(null as any);
-            } else {
-              onSelectSection(section);
-            }
-          }}
+          className={`text-sm font-medium mb-3 text-center cursor-pointer`}
         >
           {sectionNames[section]}
         </h3>
@@ -353,7 +300,7 @@ const HallLayoutGrid: React.FC<HallLayoutGridProps> = ({
                     <div className="w-full h-6 border-t-2 border-b-2 border-gray-300 border-dashed flex items-center justify-center min-w-[300px]">
                       <div className="relative group">
                         <span className="text-xs text-gray-400 cursor-pointer">Przejście</span>
-                        {selectedSection === section && onAddEmptyRow && (
+                        {onAddEmptyRow && (
                           <button
                             onClick={(e) => {
                               e.stopPropagation();
@@ -425,7 +372,7 @@ const HallLayoutGrid: React.FC<HallLayoutGridProps> = ({
                       if (isRemoved) {
                         return (
                           <div key={seatIndex} className="w-6 h-6 relative group">
-                            {selectedSection === section && onRemoveSeat && (
+                            {onRemoveSeat && (
                               <button
                                 onClick={(e) => {
                                   e.stopPropagation();
@@ -444,28 +391,15 @@ const HallLayoutGrid: React.FC<HallLayoutGridProps> = ({
                       // Calculate seat number based on whether auto-renumbering is enabled
                       const seatNumber = getSeatNumber(section, rowIndex, seatIndex, numberingDirections[section]);
                       
-                      // Get seat assignment if any
-                      const seatId = `${section}-${rowIndex}-${seatIndex}`;
-                      const assignedSchool = seatAssignments[seatId];
-                      const schoolColor = schools.find(s => s.name === assignedSchool)?.color;
-                      
                       return (
                         <div 
                           key={`seat-${seatIndex}`}
-                          className={`relative w-6 h-6 rounded flex items-center justify-center group hover:bg-blue-200 transition-colors ${
-                            assignedSchool ? 'bg-blue-500 text-white' : 'bg-gray-50 border border-gray-500'
-                          } ${isPreviewMode ? 'cursor-pointer' : ''}`}
-                          onClick={() => {
-                            if (isPreviewMode && onSeatClick) {
-                              onSeatClick(section, rowIndex, seatIndex);
-                            }
-                          }}
-                          style={schoolColor ? { backgroundColor: schoolColor } : undefined}
+                          className={`relative w-6 h-6 rounded flex items-center justify-center group hover:bg-blue-200 transition-colors`}
                         >
-                          <span className={`text-[12px] ${assignedSchool ? 'text-white' : 'text-gray-700'}`}>
+                          <span className={`text-[12px] text-gray-700`}>
                             {seatNumber}
                           </span>
-                          {selectedSection === section && onRemoveSeat && !isPreviewMode && (
+                          {onRemoveSeat && (
                             <button
                               onClick={(e) => {
                                 e.stopPropagation();
@@ -518,14 +452,7 @@ const HallLayoutGrid: React.FC<HallLayoutGridProps> = ({
           {/* Center section (PARTER) */}
           <div className="flex-shrink-0 min-w-[300px] mx-2">
             <h3 
-              className={`text-sm font-medium mb-3 text-center cursor-pointer ${selectedSection === 'main' ? 'text-red-600 font-bold' : 'text-gray-700'}`}
-              onClick={() => {
-                if (selectedSection === 'main') {
-                  onSelectSection(null as any);
-                } else {
-                  onSelectSection('main');
-                }
-              }}
+              className={`text-sm font-medium mb-3 text-center cursor-pointer`}
             >
               {sectionNames.main}
             </h3>
@@ -556,7 +483,7 @@ const HallLayoutGrid: React.FC<HallLayoutGridProps> = ({
                         <div className="w-full h-6 border-t border-b border-gray-300 border-dashed flex items-center justify-center min-w-[300px]">
                           <div className="relative group">
                             <span className="text-xs text-gray-400 cursor-pointer">Przejście</span>
-                            {selectedSection === 'main' && onAddEmptyRow && (
+                            {onAddEmptyRow && (
                               <button
                                 onClick={(e) => {
                                   e.stopPropagation();
@@ -628,7 +555,7 @@ const HallLayoutGrid: React.FC<HallLayoutGridProps> = ({
                           if (isRemoved) {
                             return (
                               <div key={seatIndex} className="w-6 h-6 relative group">
-                                {selectedSection === 'main' && onRemoveSeat && (
+                                {onRemoveSeat && (
                                   <button
                                     onClick={(e) => {
                                       e.stopPropagation();
@@ -647,28 +574,15 @@ const HallLayoutGrid: React.FC<HallLayoutGridProps> = ({
                           // Calculate seat number based on whether auto-renumbering is enabled
                           const seatNumber = getSeatNumber('main', rowIndex, seatIndex, numberingDirections['main']);
                           
-                          // Get seat assignment if any
-                          const seatId = `main-${rowIndex}-${seatIndex}`;
-                          const assignedSchool = seatAssignments[seatId];
-                          const schoolColor = schools.find(s => s.name === assignedSchool)?.color;
-                          
                           return (
                             <div 
                               key={`seat-${seatIndex}`}
-                              className={`relative w-6 h-6 rounded flex items-center justify-center group hover:bg-blue-200 transition-colors ${
-                                assignedSchool ? 'bg-blue-500 text-white' : 'bg-gray-50 border border-gray-500'
-                              } ${isPreviewMode ? 'cursor-pointer' : ''}`}
-                              onClick={() => {
-                                if (isPreviewMode && onSeatClick) {
-                                  onSeatClick('main', rowIndex, seatIndex);
-                                }
-                              }}
-                              style={schoolColor ? { backgroundColor: schoolColor } : undefined}
+                              className={`relative w-6 h-6 rounded flex items-center justify-center group hover:bg-blue-200 transition-colors`}
                             >
-                              <span className={`text-[12px] ${assignedSchool ? 'text-white' : 'text-gray-700'}`}>
+                              <span className={`text-[12px] text-gray-700`}>
                                 {seatNumber}
                               </span>
-                              {selectedSection === 'main' && onRemoveSeat && !isPreviewMode && (
+                              {onRemoveSeat && (
                                 <button
                                   onClick={(e) => {
                                     e.stopPropagation();
@@ -711,33 +625,6 @@ const HallLayoutGrid: React.FC<HallLayoutGridProps> = ({
       {sections.back?.enabled && renderBackSection('back')}
       {sections.back1?.enabled && renderBackSection('back1')}
       {sections.back2?.enabled && renderBackSection('back2')}
-      
-      {/* Show legend if enabled */}
-      {showLegend && schools.length > 0 && (
-        <div className="mt-8 border-t border-gray-200 pt-4 w-full max-w-4xl">
-          <div className="flex flex-wrap gap-4 justify-center">
-            {schools.map(school => (
-              <div key={school.name} className="flex items-center gap-2">
-                <div 
-                  className="w-4 h-4 rounded"
-                  style={{ backgroundColor: school.color }}
-                />
-                <span className="text-sm text-gray-700">{school.name}</span>
-              </div>
-            ))}
-          </div>
-        </div>
-      )}
-      
-      {/* Hidden element to expose the setAutoRenumberSeats function to parent component */}
-      <div id="renumberSeatsControl" style={{ display: 'none' }}>
-        <button 
-          onClick={toggleAutoRenumberSeats}
-          data-testid="renumber-seats-button"
-        >
-          {effectiveAutoRenumberSeats ? "Pomiń miejsca" : "Numeruj całość"}
-        </button>
-      </div>
     </div>
   );
 };
