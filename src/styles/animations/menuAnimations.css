@@ -1,0 +1,37 @@
+@keyframes pulse-scale {
+  0%, 100% { transform: scale(1); }
+  50% { transform: scale(1.1); }
+}
+
+@keyframes rotate-bounce {
+  0% { transform: rotate(0deg); }
+  25% { transform: rotate(-10deg); }
+  75% { transform: rotate(10deg); }
+  100% { transform: rotate(0deg); }
+}
+
+@keyframes slide-bounce {
+  0% { transform: translateY(0); }
+  50% { transform: translateY(-4px); }
+  100% { transform: translateY(0); }
+}
+
+.menu-button {
+  @apply p-2 rounded-lg transition-all duration-200;
+}
+
+.menu-button:hover {
+  @apply bg-white/10;
+}
+
+.menu-button-pulse:hover svg {
+  animation: pulse-scale 0.5s ease-in-out;
+}
+
+.menu-button-rotate:hover svg {
+  animation: rotate-bounce 0.5s ease-in-out;
+}
+
+.menu-button-bounce:hover svg {
+  animation: slide-bounce 0.5s ease-in-out;
+}

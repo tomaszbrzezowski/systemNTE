@@ -1,0 +1,2 @@
+-- Seed file to initialize database
+-- This is empty to preserve existing data
