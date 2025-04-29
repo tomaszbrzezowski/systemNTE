@@ -19,6 +19,7 @@ interface RowComponentProps {
   onMouseLeave: () => void;
   onAddEmptyRow?: (section: string, afterRowIndex: number) => void;
   onRemoveSeat?: (section: string, rowIndex: number, seatIndex: number) => void;
+  onClick?: () => void;
 }
 
 /**
@@ -39,7 +40,8 @@ const RowComponent: React.FC<RowComponentProps> = ({
   onMouseEnter,
   onMouseLeave,
   onAddEmptyRow,
-  onRemoveSeat
+  onRemoveSeat,
+  onClick
 }) => {
   // Get row alignment (left, center, right)
   const alignment = getRowAlignment(section, rowIndex, rowAlignments, sectionAlignments);
@@ -50,7 +52,11 @@ const RowComponent: React.FC<RowComponentProps> = ({
     alignment === 'right' ? 'justify-end' : 'justify-center';
 
   return (
-    <div className="flex items-center justify-center min-w-max">
+    <div 
+      className="flex items-center justify-center min-w-max"
+      onClick={onClick}
+      style={{ cursor: onClick ? 'pointer' : 'default' }}
+    >
       <div className="w-16 text-right pr-4 font-bold text-gray-700 relative">
         <div 
           className="flex items-center justify-end"

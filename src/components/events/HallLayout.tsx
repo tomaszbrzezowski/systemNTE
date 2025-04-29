@@ -1,4 +1,4 @@
-import React from 'react';
+import React, { useEffect } from 'react';
 import { useNavigate, useParams } from 'react-router-dom';
 import { ArrowLeft, Building2, MapPin, Save, Plus, Minus, Check, Settings, Edit2, ListOrdered, ChevronDown, ChevronUp, RotateCcw } from 'lucide-react';
 import { toast } from 'react-hot-toast';
@@ -13,7 +13,18 @@ import { SectionType } from '../../utils/hallLayoutUtils';
 
 const HallLayout: React.FC = () => {
   const navigate = useNavigate();
-  const { id: hallId } = useParams<{ id: string }>();
+  const { hallId } = useParams<{ hallId: string }>();
+  
+  // Validate hallId is a valid UUID
+  const isValidUUID = hallId && /^[0-9a-f]{8}-[0-9a-f]{4}-[1-5][0-9a-f]{3}-[89ab][0-9a-f]{3}-[0-9a-f]{12}$/i.test(hallId);
+  
+  // Redirect to halls list if the hallId is not a valid UUID
+  useEffect(() => {
+    if (hallId && !isValidUUID) {
+      navigate('/events/halls');
+    }
+  }, [hallId, isValidUUID, navigate]);
+  
   const {
     // State
     loading,

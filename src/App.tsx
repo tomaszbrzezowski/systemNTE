@@ -38,8 +38,8 @@ function InnerApp() {
         <Route path="agreements" element={<Agreements />} />
         <Route path="agreements/create" element={<CreateAgreement />} />
         <Route path="halls" element={<Halls />} />
-        <Route path="halls/:hallId(\b[0-9a-f]{8}-[0-9a-f]{4}-[1-5][0-9a-f]{3}-[89ab][0-9a-f]{3}-[0-9a-f]{12}\b)/layout" element={<HallLayout />} />
-        <Route path="halls/:hallId(\b[0-9a-f]{8}-[0-9a-f]{4}-[1-5][0-9a-f]{3}-[89ab][0-9a-f]{3}-[0-9a-f]{12}\b)/preview" element={<HallLayoutPreview />} />
+        <Route path="halls/:hallId/layout" element={<HallLayout />} />
+        <Route path="halls/:hallId/preview" element={<HallLayoutPreview />} />
         <Route path="clients" element={<Clients />} />
       </Route>
     </Routes>

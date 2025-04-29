@@ -30,7 +30,18 @@ interface SectionBlock {
 
 const HallLayoutPreview: React.FC = () => {
   const navigate = useNavigate();
-  const { id: hallId } = useParams<{ id: string }>();
+  const { hallId } = useParams<{ hallId: string }>();
+  
+  // Validate hallId is a valid UUID
+  const isValidUUID = hallId && /^[0-9a-f]{8}-[0-9a-f]{4}-[1-5][0-9a-f]{3}-[89ab][0-9a-f]{3}-[0-9a-f]{12}$/i.test(hallId);
+  
+  // Redirect to halls list if the hallId is not a valid UUID
+  useEffect(() => {
+    if (hallId && !isValidUUID) {
+      navigate('/events/halls');
+    }
+  }, [hallId, isValidUUID, navigate]);
+  
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState<string | null>(null);
   const [hallName, setHallName] = useState('');

@@ -69,10 +69,14 @@ const HallLayoutGrid: React.FC<HallLayoutGridProps> = ({
                 rowLabels={rowLabels}
                 emptyRows={emptyRows}
                 removedSeats={removedSeats}
+                rowSeatsPerRow={rowSeatsPerRow}
                 rowAlignments={rowAlignments}
                 sectionAlignments={sectionAlignments}
                 skipRemovedSeatsVisual={skipRemovedSeatsVisual}
+                onAddEmptyRow={onAddEmptyRow}
                 onRemoveSeat={onRemoveSeat}
+                onSelectRow={onSelectRow}
+                side="left"
               />
             )}
             {sections.left1?.enabled && (
@@ -85,10 +89,14 @@ const HallLayoutGrid: React.FC<HallLayoutGridProps> = ({
                 rowLabels={rowLabels}
                 emptyRows={emptyRows}
                 removedSeats={removedSeats}
+                rowSeatsPerRow={rowSeatsPerRow}
                 rowAlignments={rowAlignments}
                 sectionAlignments={sectionAlignments}
                 skipRemovedSeatsVisual={skipRemovedSeatsVisual}
+                onAddEmptyRow={onAddEmptyRow}
                 onRemoveSeat={onRemoveSeat}
+                onSelectRow={onSelectRow}
+                side="left"
               />
             )}
             {sections.left?.enabled && (
@@ -101,10 +109,14 @@ const HallLayoutGrid: React.FC<HallLayoutGridProps> = ({
                 rowLabels={rowLabels}
                 emptyRows={emptyRows}
                 removedSeats={removedSeats}
+                rowSeatsPerRow={rowSeatsPerRow}
                 rowAlignments={rowAlignments}
                 sectionAlignments={sectionAlignments}
                 skipRemovedSeatsVisual={skipRemovedSeatsVisual}
+                onAddEmptyRow={onAddEmptyRow}
                 onRemoveSeat={onRemoveSeat}
+                onSelectRow={onSelectRow}
+                side="left"
               />
             )}
           </div>
@@ -126,6 +138,7 @@ const HallLayoutGrid: React.FC<HallLayoutGridProps> = ({
               skipRemovedSeatsVisual={skipRemovedSeatsVisual}
               onAddEmptyRow={onAddEmptyRow}
               onRemoveSeat={onRemoveSeat}
+              onSelectRow={onSelectRow}
             />
           )}
           
@@ -141,10 +154,14 @@ const HallLayoutGrid: React.FC<HallLayoutGridProps> = ({
                 rowLabels={rowLabels}
                 emptyRows={emptyRows}
                 removedSeats={removedSeats}
+                rowSeatsPerRow={rowSeatsPerRow}
                 rowAlignments={rowAlignments}
                 sectionAlignments={sectionAlignments}
                 skipRemovedSeatsVisual={skipRemovedSeatsVisual}
+                onAddEmptyRow={onAddEmptyRow}
                 onRemoveSeat={onRemoveSeat}
+                onSelectRow={onSelectRow}
+                side="right"
               />
             )}
             {sections.right1?.enabled && (
@@ -157,10 +174,14 @@ const HallLayoutGrid: React.FC<HallLayoutGridProps> = ({
                 rowLabels={rowLabels}
                 emptyRows={emptyRows}
                 removedSeats={removedSeats}
+                rowSeatsPerRow={rowSeatsPerRow}
                 rowAlignments={rowAlignments}
                 sectionAlignments={sectionAlignments}
                 skipRemovedSeatsVisual={skipRemovedSeatsVisual}
+                onAddEmptyRow={onAddEmptyRow}
                 onRemoveSeat={onRemoveSeat}
+                onSelectRow={onSelectRow}
+                side="right"
               />
             )}
             {sections.right2?.enabled && (
@@ -173,10 +194,14 @@ const HallLayoutGrid: React.FC<HallLayoutGridProps> = ({
                 rowLabels={rowLabels}
                 emptyRows={emptyRows}
                 removedSeats={removedSeats}
+                rowSeatsPerRow={rowSeatsPerRow}
                 rowAlignments={rowAlignments}
                 sectionAlignments={sectionAlignments}
                 skipRemovedSeatsVisual={skipRemovedSeatsVisual}
+                onAddEmptyRow={onAddEmptyRow}
                 onRemoveSeat={onRemoveSeat}
+                onSelectRow={onSelectRow}
+                side="right"
               />
             )}
           </div>
@@ -204,6 +229,7 @@ const HallLayoutGrid: React.FC<HallLayoutGridProps> = ({
           skipRemovedSeatsVisual={skipRemovedSeatsVisual}
           onAddEmptyRow={onAddEmptyRow}
           onRemoveSeat={onRemoveSeat}
+          onSelectRow={onSelectRow}
         />
       )}
       {sections.back1?.enabled && (
@@ -222,6 +248,7 @@ const HallLayoutGrid: React.FC<HallLayoutGridProps> = ({
           skipRemovedSeatsVisual={skipRemovedSeatsVisual}
           onAddEmptyRow={onAddEmptyRow}
           onRemoveSeat={onRemoveSeat}
+          onSelectRow={onSelectRow}
         />
       )}
       {sections.back2?.enabled && (
@@ -240,6 +267,7 @@ const HallLayoutGrid: React.FC<HallLayoutGridProps> = ({
           skipRemovedSeatsVisual={skipRemovedSeatsVisual}
           onAddEmptyRow={onAddEmptyRow}
           onRemoveSeat={onRemoveSeat}
+          onSelectRow={onSelectRow}
         />
       )}
     </div>

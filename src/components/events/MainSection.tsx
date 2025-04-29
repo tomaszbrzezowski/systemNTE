@@ -19,6 +19,7 @@ interface MainSectionProps {
   skipRemovedSeatsVisual: boolean;
   onAddEmptyRow?: (section: string, afterRowIndex: number) => void;
   onRemoveSeat?: (section: string, rowIndex: number, seatIndex: number) => void;
+  onSelectRow?: (section: string, rowIndex: number) => void;
 }
 
 /**
@@ -38,7 +39,8 @@ const MainSection: React.FC<MainSectionProps> = ({
   sectionAlignments,
   skipRemovedSeatsVisual,
   onAddEmptyRow,
-  onRemoveSeat
+  onRemoveSeat,
+  onSelectRow
 }) => {
   const [hoveredRow, setHoveredRow] = useState<number | null>(null);
   
@@ -104,6 +106,7 @@ const MainSection: React.FC<MainSectionProps> = ({
                 onMouseLeave={() => setHoveredRow(null)}
                 onAddEmptyRow={onAddEmptyRow}
                 onRemoveSeat={onRemoveSeat}
+                onClick={onSelectRow ? () => onSelectRow(section, rowIndex) : undefined}
               />
             );
           }

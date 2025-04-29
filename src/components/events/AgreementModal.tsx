@@ -1,50 +1,17 @@
-import React, { useState, useEffect } from 'react';
+import React from 'react';
 import { X, Plus, Minus } from 'lucide-react';
-import { supabase } from '../../lib/supabase';
-import { City, EventStatus } from '../../types';
-import { useAuth } from '../../context/AuthContext';
+import { useAgreementForm } from '../../hooks/useAgreementForm';
+import { validateAgreementForm } from '../../utils/agreementUtils';
 import TimeSelector from './TimeSelector';
 import PerformanceDateSelector from './PerformanceDateSelector';
-
-interface Performance {
-  date: string;
-  showTitleId: string;
-  time: string;
-  paidTickets: number;
-  unpaidTickets: number;
-  teacherTickets: number;
-  cost: number;
-  notes: string;
-}
+import { AgreementFormData } from '../../hooks/useAgreement';
 
 interface AgreementModalProps {
   isOpen: boolean;
   onClose: () => void;
   editMode: boolean;
-  initialData?: {
-    season: string;
-    date: string;
-    schoolName: string;
-    schoolAddress: string;
-    teacherName: string;
-    teacherPhone: string;
-    teacherEmail: string;
-    hallCityName: string;
-    hallName: string;
-    performances: Performance[];
-  };
-  onSubmit: (data: {
-    season: string;
-    date: string;
-    schoolName: string;
-    schoolAddress: string;
-    teacherName: string;
-    teacherPhone: string;
-    teacherEmail: string;
-    hallCityName: string;
-    hallName: string;
-    performances: Performance[];
-  }) => void;
+  initialData?: AgreementFormData;
+  onSubmit: (data: AgreementFormData) => void;
 }
 
 const AgreementModal: React.FC<AgreementModalProps> = ({ 
@@ -54,300 +21,47 @@ const AgreementModal: React.FC<AgreementModalProps> = ({
   editMode = false,
   initialData
 }) => {
-  const { currentUser } = useAuth();
-  const [season, setSeason] = useState<'current' | 'next'>(
-    editMode && initialData ? 
-      (initialData.season === new Date().getFullYear().toString() ? 'current' : 'next') 
-      : 'current'
-  );
-  const [calendars, setCalendars] = useState<{
-    id: string;
-    name: string;
-    events: {
-      date: Date;
-    }[];
-  }[]>([]);
-  const [showTitles, setShowTitles] = useState<{ 
-    id: string; 
-    name: string; 
-    current_season: boolean; 
-    next_season: boolean
-  }[]>([]);
-  const [calendarShowTitles, setCalendarShowTitles] = useState<{
-    calendar_id: string;
-    show_title_id: string;
-  }[]>([]);
-  const [cities, setCities] = useState<City[]>([]);
-  const [citySuggestions, setCitySuggestions] = useState<{
-    school: string[];
-    event: City[],
-    voivodeships: { [key: string]: string }
-  }>({ school: [], event: [], voivodeships: {} });
-  const [showSchoolCitySuggestions, setShowSchoolCitySuggestions] = useState(false);
-  const [showEventCitySuggestions, setShowEventCitySuggestions] = useState(false);
-  const [halls, setHalls] = useState<{ id: string; name: string; city_id: string }[]>([]);
-  const [selectedCityId, setSelectedCityId] = useState<string>('');
-  const [filteredHalls, setFilteredHalls] = useState<{ id: string; name: string; city_id: string }[]>([]);
-  const [formData, setFormData] = useState({
-    city: editMode && initialData ? initialData.hallCityName : '',
-    date: editMode && initialData ? initialData.date : '',
-    schoolName: editMode && initialData ? initialData.schoolName : '',
-    schoolAddress: editMode && initialData ? initialData.schoolAddress : '',
-    teacherName: editMode && initialData ? initialData.teacherName : '',
-    teacherPhone: editMode && initialData ? initialData.teacherPhone : '',
-    teacherEmail: editMode && initialData ? initialData.teacherEmail : '',
-    hallCityName: editMode && initialData ? initialData.hallCityName : '',
-    hallName: editMode && initialData ? initialData.hallName : '',
-  });
-  const [showSchoolSuggestions, setShowSchoolSuggestions] = useState(false);
-  const [events, setEvents] = useState<{
-    id: string;
-    date: string;
-    status: EventStatus;
-    calendar_id: string;
-  }[]>([]);
-  const [performanceTypes, setPerformanceTypes] = useState<{
-    id: string;
-    name: string;
-  }[]>([]);
-  const [performances, setPerformances] = useState<Performance[]>(
-    editMode && initialData ? initialData.performances : [{
-      date: '',
-      showTitleId: '',
-      time: '',
-      paidTickets: 0,
-      unpaidTickets: 0,
-      teacherTickets: 0,
-      cost: 0,
-      notes: ''
-    }]
-  );
-
-  const [schoolSuggestions, setSchoolSuggestions] = useState<{
-    name: string;
-    address: string;
-    teacher_name?: string;
-    teacher_phone?: string;
-    teacher_email?: string;
-  }[]>([]);
-  const [showSuggestions, setShowSuggestions] = useState(false);
-
-  // Load unique cities from schools_list
-  useEffect(() => {
-    const loadCities = async () => {
-      const { data: schoolsData, error: schoolsError } = await supabase
-        .from('schools_list')
-        .select('city, voivodeship')
-        .order('city');
-      
-      if (schoolsError) {
-        console.error('Error loading cities:', schoolsError);
-        return;
-      }
-
-      const uniqueCities = [...new Set(schoolsData.map(row => row.city))];
-      const voivodeships = schoolsData.reduce((acc, row) => {
-        acc[row.city] = row.voivodeship;
-        return acc;
-      }, {} as { [key: string]: string });
-      
-      setCities(uniqueCities);
-      setCitySuggestions(prev => ({ ...prev, voivodeships }));
-    };
-
-    loadCities();
-  }, []);
-
-  // Load school suggestions when city is selected
-  const loadSchoolSuggestions = async (cityName: string) => {
-    const { data, error } = await supabase
-      .from('schools_list')
-      .select('*')
-      .eq('city', cityName)
-      .order('school_name')
-      .limit(50);
-
-    if (error) {
-      console.error('Error loading schools:', error);
-      return;
-    }
-
-    setSchoolSuggestions(data.map(school => ({
-      name: school.school_name,
-      address: `${school.street} ${school.home_number}${school.local_number ? '/' + school.local_number : ''}, ${school.postcode} ${school.post}`
-    })));
-  };
-
-  useEffect(() => {
-    const loadData = async () => {
-      const [
-        { data: titlesData, error: titlesError }, 
-        { data: typesData, error: typesError },
-        { data: citiesData, error: citiesError }, 
-        { data: hallsData, error: hallsError }, 
-        { data: calendarTitlesData, error: calendarTitlesError },
-        { data: calendarsData, error: calendarsError },
-        { data: eventsData, error: eventsError }
-      ] = await Promise.all([
-        supabase
-        .from('show_titles')
-        .select('id, name, current_season, next_season, type_id')
-        .eq('active', true)
-        .order('name'),
-        supabase
-        .from('performance_types')
-        .select('id, name')
-        .order('name'),
-        supabase
-        .from('cities')
-        .select('*')
-        .order('name'),
-        supabase
-        .from('halls')
-        .select('*'),
-        supabase
-        .from('calendar_show_titles')
-        .select('*'),
-        supabase
-        .from('calendars')
-        .select('id, name'),
-        supabase
-        .from('calendar_events')
-        .select('id, date, status, calendar_id')
-        .eq('user_id', currentUser?.id)
-        .order('date', { ascending: true })
-      ]);
-      
-      if (titlesError) console.error('Error loading titles:', titlesError);
-      if (citiesError) console.error('Error loading cities:', citiesError);
-      if (hallsError) console.error('Error loading halls:', hallsError);
-      if (calendarTitlesError) console.error('Error loading calendar titles:', calendarTitlesError);
-      if (calendarsError) console.error('Error loading calendars:', calendarsError);
-      if (eventsError) console.error('Error loading events:', eventsError);
-
-      if (titlesData) {
-        setShowTitles(titlesData);
-      }
-      if (typesData) {
-        setPerformanceTypes(typesData);
-      }
-      if (citiesData) setCities(citiesData);
-      if (hallsData) setHalls(hallsData);
-      if (calendarTitlesData) setCalendarShowTitles(calendarTitlesData);
-      if (calendarsData && eventsData) {
-        setCalendars(calendarsData);
-        setEvents(eventsData);
-      }
-    };
-    loadData();
-  }, [currentUser?.id]);
-
-  // Update filtered halls when selected city changes
-  useEffect(() => {
-    if (selectedCityId) {
-      const filtered = halls.filter(hall => hall.city_id === selectedCityId);
-      setFilteredHalls(filtered);
-    } else {
-      setFilteredHalls([]);
-    }
-  }, [selectedCityId, halls]);
-
-  const getFilteredShowTitles = (date: string) => {
-    if (!date) return [];
-
-    // Find the event for this date
-    const event = events.find(e => e.date === date);
-    if (!event?.calendar_id) return [];
-
-    // Get show titles assigned to this calendar
-    const assignedTitleIds = calendarShowTitles.filter(cst => 
-      cst.calendar_id === event.calendar_id
-    ).map(cst => cst.show_title_id);
-
-    // Filter show titles by season and calendar assignment
-    const filteredTitles = showTitles.filter(title =>
-      assignedTitleIds.includes(title.id) &&
-      (season === 'current' ? title.current_season : title.next_season)
-    );
-
-    // Sort titles by type (youngest to oldest)
-    return filteredTitles.sort((a, b) => {
-      const typeOrder = {
-        'Dzieci Młodsze': 1,
-        'Dzieci Starsze': 2,
-        'Młodzież': 3,
-        'Szkoły średnie': 4
-      };
-      
-      const getTypeWeight = (title: typeof filteredTitles[0]) => {
-        const type = showTitles.find(t => t.id === title.id)?.type_id;
-        if (!type) return 999; // Put titles without type at the end
-        const performanceType = performanceTypes?.find(pt => pt.id === type);
-        return typeOrder[performanceType?.name as keyof typeof typeOrder] || 999;
-      };
-      
-      return getTypeWeight(a) - getTypeWeight(b);
-    });
-  };
+  const {
+    formData,
+    performances,
+    season,
+    filteredHalls,
+    citySuggestions,
+    schoolSuggestions,
+    showSchoolCitySuggestions,
+    showEventCitySuggestions,
+    showSchoolSuggestions,
+    
+    setSeason,
+    setFormData,
+    setPerformances,
+    setSelectedCityId,
+    setCitySuggestions,
+    setShowSchoolCitySuggestions,
+    setShowEventCitySuggestions,
+    setShowSchoolSuggestions,
+    
+    loadSchoolSuggestions,
+    getFilteredShowTitles,
+    addPerformance,
+    removePerformance,
+    validateForm,
+    getFormData
+  } = useAgreementForm({ editMode, initialData });
 
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
     
     try {
-      // Validate required fields
-      if (!formData.date || !formData.schoolName || !formData.schoolAddress || 
-          !formData.teacherName || !formData.teacherPhone || !formData.teacherEmail ||
-          !formData.hallCityName || !formData.hallName) {
-        throw new Error('Wszystkie pola są wymagane');
+      const validation = validateForm();
+      if (!validation.isValid) {
+        throw new Error(validation.errors.join('\n'));
       }
       
-      // Validate performances
-      if (!performances.length) {
-        throw new Error('Dodaj przynajmniej jeden spektakl');
-      }
-      
-      for (const perf of performances) {
-        if (!perf.date || !perf.showTitleId || !perf.time) {
-          throw new Error('Wypełnij wszystkie wymagane pola spektaklu');
-        }
-      }
-      
-      onSubmit({
-        season: season === 'current' ? new Date().getFullYear().toString() : (new Date().getFullYear() + 1).toString(),
-        date: formData.date,
-        schoolName: formData.schoolName,
-        schoolAddress: formData.schoolAddress,
-        teacherName: formData.teacherName,
-        teacherPhone: formData.teacherPhone,
-        teacherEmail: formData.teacherEmail,
-        hallCityName: formData.hallCityName,
-        hallName: formData.hallName,
-        performances
-      });
+      onSubmit(getFormData());
       onClose();
     } catch (error) {
       alert(error instanceof Error ? error.message : 'Wystąpił błąd podczas zapisywania umowy');
-    }
-  };
-
-  const addPerformance = () => {
-    if (performances.length < 5) {
-      setPerformances([...performances, {
-        date: '',
-        showTitleId: '',
-        time: '',
-        paidTickets: 0,
-        unpaidTickets: 0,
-        teacherTickets: 0,
-        cost: 0,
-        notes: ''
-      }]);
-    }
-  };
-
-  const removePerformance = (index: number) => {
-    if (performances.length > 1) {
-      setPerformances(performances.filter((_, i) => i !== index));
     }
   };
 
@@ -420,9 +134,10 @@ const AgreementModal: React.FC<AgreementModalProps> = ({
                     setFormData({ ...formData, city: e.target.value });
                     const searchTerm = e.target.value.toLowerCase();
                     if (searchTerm.length >= 2) {
-                      const suggestions = cities
-                        .filter(city => typeof city === 'string' ? city.toLowerCase().includes(searchTerm) : city.name.toLowerCase().includes(searchTerm))
-                        .map(city => city.name);
+                      const suggestions = citySuggestions.voivodeships ? 
+                        Object.keys(citySuggestions.voivodeships)
+                          .filter(city => city.toLowerCase().includes(searchTerm))
+                        : [];
                       setCitySuggestions(prev => ({ ...prev, school: suggestions }));
                     } else {
                       setCitySuggestions(prev => ({ ...prev, school: [] }));
@@ -497,7 +212,7 @@ const AgreementModal: React.FC<AgreementModalProps> = ({
                             teacherEmail: school.teacher_email || ''
                           });
                           setShowSchoolSuggestions(false);
-                          setCitySuggestions({ school: [], event: [] });
+                          setCitySuggestions({ school: [], event: [], voivodeships: citySuggestions.voivodeships });
                         }}
                       >
                         <div className="font-medium text-gray-900">{school.name}</div>
@@ -577,7 +292,7 @@ const AgreementModal: React.FC<AgreementModalProps> = ({
                     setSelectedCityId(''); // Reset selected city ID
                     
                     if (searchTerm.length >= 2) {
-                      const suggestions = cities.filter(city => 
+                      const suggestions = citySuggestions.event.filter(city => 
                         city.name.toLowerCase().includes(searchTerm)
                       );
                       setCitySuggestions(prev => ({ ...prev, event: suggestions }));
@@ -614,7 +329,7 @@ const AgreementModal: React.FC<AgreementModalProps> = ({
             <div>
               <label className="block text-sm font-medium text-gray-700 mb-1">
                 Nazwa sali
-                {selectedCityId && filteredHalls.length === 0 && (
+                {filteredHalls.length === 0 && (
                   <span className="text-xs text-red-500 ml-2">
                     Brak dostępnych sal w tym mieście
                   </span>
@@ -625,7 +340,6 @@ const AgreementModal: React.FC<AgreementModalProps> = ({
                 onChange={(e) => setFormData({ ...formData, hallName: e.target.value })}
                 className="w-full px-4 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-red-500 focus:border-red-500"
                 required
-                disabled={!selectedCityId}
               >
                 <option value="">Wybierz salę</option>
                 {filteredHalls.map(hall => (
@@ -681,7 +395,7 @@ const AgreementModal: React.FC<AgreementModalProps> = ({
                         const newPerformances = [...performances];
                         newPerformances[index].date = date;
                         // Reset show title if calendar changes
-                        if (calendarId && calendarId !== events.find(e => e.date === date)?.calendar_id) {
+                        if (calendarId) {
                           newPerformances[index].showTitleId = '';
                         }
                         setPerformances(newPerformances);
